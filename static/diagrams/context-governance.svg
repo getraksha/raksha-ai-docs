@@ -13,7 +13,8 @@
     </marker>
   </defs>
   <rect width="760" height="400" fill="#f6f8fa" rx="12"/>
-  <text x="100" y="32" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" font-weight="600" fill="#57606a" letter-spacing="0.05em">CONTEXT-PRODUCING CAPABILITY SURFACES</text>
+  <text x="100" y="22" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" font-weight="600" fill="#57606a" letter-spacing="0.05em">CONTEXT-PRODUCING</text>
+  <text x="100" y="35" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" font-weight="600" fill="#57606a" letter-spacing="0.05em">CAPABILITY SURFACES</text>
   <rect x="20" y="50" width="160" height="60" rx="8" fill="#fff7ed" stroke="#c2410c" stroke-width="1.5"/>
   <text x="100" y="76" text-anchor="middle" font-family="Inter,sans-serif" font-size="13" font-weight="700" fill="#c2410c">CaSH</text>
   <text x="100" y="96" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="#7c3d12">Context-Aware Shell</text>
