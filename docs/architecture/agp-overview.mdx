@@ -1,0 +1,199 @@
+---
+id: agp-overview
+title: Agent Governance Plane — Architecture Overview
+sidebar_label: AGP Overview
+description: How AGP works — the three planes, key design decisions, request flows, and deployment model.
+---
+
+# Agent Governance Plane — Architecture Overview
+
+**Raksha AI — May 2026**
+
+---
+
+## What AGP Is
+
+The Agent Governance Plane is the runtime enforcement layer that sits between AI agents and every MCP tool they can invoke. It is not an SDK, a wrapper, or a convention — it is infrastructure. Every agent-to-tool call passes through AGP. No call reaches a tool backend unless AGP has authenticated the agent, evaluated policy, checked rate limits, and made an explicit decision to allow it.
+
+AGP answers a question that existing MCP infrastructure does not: who is this agent, under what approved operating envelope, and does it have the right to invoke this tool right now — and if so, should a human review it first?
+
+That question must be answered at runtime, on every call, with full context. AGP is the system that does it.
+
+---
+
+## Three Planes
+
+AGP is organized into three distinct planes. Each plane has a clearly bounded responsibility, a different latency profile, and different scaling characteristics. Nothing from the observability plane ever blocks the data plane. Nothing from the control plane is on the hot path unless it has been pre-loaded and cached.
+
+<div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'1rem',margin:'2rem 0'}}>
+
+  <div style={{borderRadius:'10px',border:'1px solid var(--ifm-toc-border-color)',background:'var(--ifm-background-surface-color)',overflow:'hidden',boxShadow:'0 1px 4px rgba(0,0,0,0.06)'}}>
+    <div style={{height:'3px',background:'linear-gradient(90deg,#1a6db5,#2563eb)'}}/>
+    <div style={{padding:'1.5rem'}}>
+      <div style={{fontSize:'1.6rem',marginBottom:'0.75rem'}}>⚡</div>
+      <div style={{fontSize:'0.65rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--ifm-color-primary)',marginBottom:'0.4rem'}}>Data Plane</div>
+      <div style={{fontSize:'0.95rem',fontWeight:700,marginBottom:'0.6rem',lineHeight:1.3}}>The Hot Path</div>
+      <div style={{fontSize:'0.8rem',color:'var(--ifm-color-content-secondary)',lineHeight:1.6}}>Every agent invocation passes through it. Stateless, horizontally scalable. The Proxy Service is its sole component.</div>
+    </div>
+  </div>
+
+  <div style={{borderRadius:'10px',border:'1px solid var(--ifm-toc-border-color)',background:'var(--ifm-background-surface-color)',overflow:'hidden',boxShadow:'0 1px 4px rgba(0,0,0,0.06)'}}>
+    <div style={{height:'3px',background:'linear-gradient(90deg,#9d4ad9,#7c3aed)'}}/>
+    <div style={{padding:'1.5rem'}}>
+      <div style={{fontSize:'1.6rem',marginBottom:'0.75rem'}}>🧩</div>
+      <div style={{fontSize:'0.65rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.1em',color:'#9d4ad9',marginBottom:'0.4rem'}}>Control Plane</div>
+      <div style={{fontSize:'0.95rem',fontWeight:700,marginBottom:'0.6rem',lineHeight:1.3}}>Policy &amp; Configuration</div>
+      <div style={{fontSize:'0.8rem',color:'var(--ifm-color-content-secondary)',lineHeight:1.6}}>Tool registry, policy engine, rate limits, approvals, identity, and secret management. Strongly consistent. Not on the hot path.</div>
+    </div>
+  </div>
+
+  <div style={{borderRadius:'10px',border:'1px solid var(--ifm-toc-border-color)',background:'var(--ifm-background-surface-color)',overflow:'hidden',boxShadow:'0 1px 4px rgba(0,0,0,0.06)'}}>
+    <div style={{height:'3px',background:'linear-gradient(90deg,#1a7a4a,#16a34a)'}}/>
+    <div style={{padding:'1.5rem'}}>
+      <div style={{fontSize:'1.6rem',marginBottom:'0.75rem'}}>🔭</div>
+      <div style={{fontSize:'0.65rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.1em',color:'#1a7a4a',marginBottom:'0.4rem'}}>Observability Plane</div>
+      <div style={{fontSize:'0.95rem',fontWeight:700,marginBottom:'0.6rem',lineHeight:1.3}}>Async Telemetry</div>
+      <div style={{fontSize:'0.8rem',color:'var(--ifm-color-content-secondary)',lineHeight:1.6}}>Audit logs, metrics, and traces — consumed from the message bus. Never blocks an invocation. Recovers independently.</div>
+    </div>
+  </div>
+
+</div>
+
+### Data Plane
+
+The data plane is the hot path. Every live agent invocation passes through it. It must be low-latency, stateless, and horizontally scalable.
+
+The sole component on the data plane is the **Proxy Service** — the single entry point for all agent-to-tool traffic. The Proxy authenticates agents, resolves tool routing, calls the Policy Engine and Rate Limiter, injects credentials, forwards approved requests, and emits audit events. It does all of this synchronously before a single byte reaches a tool backend.
+
+The Proxy Service is stateless by design. It holds no durable state of its own. Policy bundles, routing tables, and rate limit rules are pre-loaded and cached from the control plane. Routing cache invalidation is event-driven: when the Registry Service publishes a `tool.updated` event, every Proxy replica refreshes its local cache within seconds. This means the hot path never waits on a database.
+
+### Control Plane
+
+The control plane is the configuration and policy layer. It is not on the hot path, but it must be strongly consistent — a policy change must propagate to the Proxy within seconds and never be silently ignored.
+
+The control plane services are: **Registry Service** (the source of truth for all registered tools), **Policy Engine** (OPA-based authorization), **Rate Limiter** (quota and throttle enforcement), **Approval Service** (human-in-the-loop workflow), **Identity Service** (agent identity and token lifecycle), and **Secret Manager** (credential injection at runtime).
+
+Each control plane service owns exactly one domain. They share no databases. They communicate with each other over internal gRPC for synchronous calls and an internal message bus for asynchronous events.
+
+### Observability Plane
+
+The observability plane is fully asynchronous and never on the critical invocation path. It consumes events published by the data and control planes and materializes them into audit records, time-series metrics, and distributed traces.
+
+The observability plane services are: **Audit Log Service** (immutable append-only records, queryable by the Admin Dashboard and exportable to SIEM) and **Metrics & Telemetry Service** (Prometheus-compatible time-series, SLO tracking, anomaly detection).
+
+Because the observability plane is async, a temporary outage in OpenSearch or the metrics pipeline does not affect agent invocations. Events accumulate on the message bus and are processed when the service recovers.
+
+---
+
+## Threat Model
+
+AGP is designed against a specific set of threats that emerge when autonomous agents operate at enterprise scale. Each threat reflects a governance and operational safety challenge that existing MCP infrastructure only partially addresses and becomes increasingly difficult to manage consistently at enterprise scale.
+
+**Decentralized Tool Governance.** Enterprise MCP environments often rely on decentralized tool-level credentials and per-tool authorization models that are difficult to govern consistently at scale. Tool credentials frequently reside alongside agents, making centralized revocation, runtime policy enforcement, capability visibility control, and compromise containment operationally difficult. AGP introduces centralized runtime enforcement so every MCP tool invocation is evaluated against agent identity, active behavior profile, runtime context, and tool metadata before execution.
+
+**Unbounded Autonomy.** Autonomous agents increasingly operate across systems capable of mutating infrastructure, triggering financial operations, sending external communications, and interacting with production environments. Existing systems provide limited mechanisms to dynamically govern when autonomy should be permitted, constrained, escalated for approval, or denied based on runtime context and operational risk. Without runtime enforcement boundaries, autonomy becomes difficult to control consistently at enterprise scale.
+
+**Unbounded Tool Visibility.** Traditional MCP environments often expose all available tools to the agent by default, regardless of operational context, autonomy level, or task scope. Tool visibility itself is a governance boundary: an agent cannot reason about, plan with, or invoke a capability it cannot see. Excessive tool visibility not only increases operational attack surface, but also expands the model’s reasoning surface and context footprint by exposing unnecessary schemas, capabilities, and operational interfaces to the agent.
+
+**Tenant Isolation Drift.** Enterprise MCP deployments often span multiple organizational tenants, environments, and governance domains, but MCP tool infrastructure itself does not provide a centralized tenant governance model. Without runtime-enforced tenant isolation, agents may gain visibility into or invoke tools, schemas, configurations, or operational resources outside their intended tenant boundary. AGP treats tenant isolation as a first-class runtime governance concern enforced consistently across discovery, visibility, authorization, and execution.
+
+**Lack of Runtime Escalation Controls.** Standard MCP execution flows provide no centralized mechanism for pausing and escalating sensitive operations before execution. Once a tool is visible and invocable by an agent, there is no built-in governance boundary that dynamically evaluates operational risk, runtime context, or approval requirements before the action executes. AGP introduces runtime HOLD semantics and human-in-the-loop escalation as first-class operational safety primitives.
+
+**Runaway Autonomous Execution.** Autonomous agents can enter recursive plans, uncontrolled retry paths, or high-frequency execution loops that repeatedly invoke MCP tools at machine speed. Without centralized runtime rate limiting and cost governance, a single misbehaving agent can rapidly exhaust API quotas, overwhelm downstream systems, trigger cascading operational load, and generate unbounded infrastructure or third-party API cost before human intervention is possible.
+
+**Cost Amplification.** Autonomous agents can repeatedly invoke MCP tools that carry real operational cost — including tools backed by paid external APIs, cloud infrastructure operations, data services, financial systems, or downstream AI workloads. Without centralized cost governance, runtime rate limits, and execution controls, a single misbehaving agent can rapidly generate operational spend and infrastructure load far beyond what a human operator would intentionally approve.
+
+**Fragmented Auditability.** MCP tools, agent runtimes, and downstream systems may each produce their own logs, traces, or audit records, but those records are fragmented across independent systems with no centralized governance context tying them together. Without a unified runtime audit and observability plane, organizations cannot reliably reconstruct which agent invoked which tool, under which behavior profile, against which runtime context, and why the action was allowed, blocked, or escalated. Operational safety requires authoritative, tamper-evident governance telemetry enforced consistently across the execution path.
+
+---
+
+## Design Principles
+
+These principles define the architectural commitments that shape every decision in AGP. They are not aspirational — they are requirements that the implementation must satisfy.
+
+**Governance outside the model.** Model safety, prompt guardrails, and agent-level guardrails are important, but they are not sufficient for operational safety. Models can be manipulated, distracted, misaligned with runtime intent, or operate under incomplete context. Operational governance therefore cannot rely solely on the model's own judgment or prompt-layer instructions. AGP enforces policy at the infrastructure and runtime layers, where governance decisions remain independent of model behavior.
+
+**Externalized runtime enforcement.** Controls must live outside the agent process. An agent SDK that enforces its own limits can be patched, bypassed, or replaced by a different runtime implementation. The enforcement point must be a system the agent cannot modify — a proxy it cannot route around, a policy engine it cannot influence, and a credential store it cannot access directly.
+
+**Identity-bound behavior.** Every agent action is traceable to a verified identity operating under an approved behavior profile. Identity alone is insufficient — the same agent may be authorized to operate differently across QA, canary, and production environments. Behavior profiles bind identity to operational scope: the combination of who the agent is and what it is currently approved to do. An agent operating without a valid approved behavior profile is rejected at runtime, preventing compromised credentials from being used outside their authorized operational boundary.
+
+**Runtime-context-aware authorization.** Authorization decisions must incorporate real-time operational context, not just static permissions. The right question is not "does this identity have this permission" — it is "does this agent, operating under this behavior profile, in this runtime context, invoking this tool right now, have the authority to proceed — and if so, should a human confirm it?" Static ACLs cannot answer that question.
+
+**Hot-path policy enforcement.** Policy must be evaluated synchronously on every invocation before execution occurs. Post-hoc policy checks, background reconciliation loops, and retrospective audit reviews do not prevent harm — they document it. Enforcement is only meaningful if it happens before the action, every time.
+
+**Least-visibility capability exposure.** Agents should only see the capabilities they are authorized to use. Tool visibility is itself a governance boundary: an agent cannot reason about, plan with, or invoke capabilities it cannot see. Exposing the full tool surface unnecessarily expands operational attack surface, increases context footprint, and exposes sensitive operational interfaces beyond the agent's intended scope. AGP dynamically scopes tool visibility to the agent's approved behavior profile and runtime context.
+
+**Fail-closed execution.** When policy state is ambiguous, a rule is missing, a bundle has not loaded, or an enforcement decision cannot be made with confidence, the default outcome is denial. AGP never fails open. An ungoverned state is not a permissive state — it is a blocked state that generates an alert.
+
+**Immutable auditability.** Every invocation, policy decision, approval, denial, and escalation event is recorded in a tamper-evident, append-only audit log. The audit record is not derived from agent behavior or agent-reported state — it is generated by the enforcement infrastructure itself, which the agent cannot influence. Completeness and integrity of the audit trail are non-negotiable.
+
+**Cost-aware autonomous execution.** Autonomous agents must operate within explicit resource and cost boundaries enforced by infrastructure. The cost surface of an agentic system scales with its autonomy and its access to external systems and APIs. Rate limits, quota enforcement, and cost circuit breakers are not operational conveniences — they are governance primitives that prevent autonomous systems from generating operational and financial consequences no human intentionally approved.
+
+---
+
+## Key Architectural Decisions
+
+Several design decisions in AGP are non-obvious and worth stating explicitly. Each reflects a deliberate tradeoff.
+
+### The Proxy Never Writes to a Database
+
+The Proxy Service emits all persistence as async events onto the message bus. It does not write to Postgres or any other database directly. This keeps the hot path free of database write latency and eliminates the Proxy as a bottleneck under write pressure. The Audit Log Service and Metrics Service consume those events asynchronously and own the write path to their respective stores.
+
+The implication is that audit records are eventually consistent with invocation completion — typically by tens of milliseconds. For a governance system, this is the right tradeoff: auditability is preserved, and the hot path is not slowed by audit write latency.
+
+### Policy Evaluation Is In-Process
+
+The Policy Engine compiles OPA Rego bundles into in-memory structures on each replica. When the Proxy calls the Policy Engine, it is calling a co-located gRPC service that performs a pure in-memory computation — no database query, no network hop to an external system. Policy bundle updates are pushed to each replica via the message bus and hot-reloaded without restart.
+
+This means policy evaluation adds single-digit milliseconds to the invocation path even at high concurrency. The tradeoff is that policy state is eventually consistent across replicas during a bundle update window — a window measured in seconds.
+
+### Credential Injection at Runtime
+
+Agents never hold credentials for the tools they call. The Secret Manager is called by the Proxy at request time, retrieving the appropriate credential for the target tool and injecting it into the outbound request header. From the agent's perspective, credentials do not exist — it only holds its own AGP identity token.
+
+This eliminates an entire class of credential exposure: an agent that is compromised or manipulated cannot exfiltrate tool credentials it was never given.
+
+### The HOLD Decision Keeps the Agent Connection Open
+
+When the Policy Engine returns `HOLD`, the Proxy does not close the agent's connection. It submits the pending invocation to the Approval Service and holds the agent connection open using long-polling or SSE. The agent waits. When a reviewer approves or denies the request, the Approval Service signals the Proxy via Redis pub/sub. The Proxy then either forwards the request or returns a denial — on the same connection the agent has been holding.
+
+This design avoids polling: the agent does not need to periodically check approval status. It waits, synchronously, for the outcome. From the agent's perspective, a `HOLD` invocation looks like a slow tool call — not a broken one.
+
+### Deny-All by Default
+
+When a new tool is registered, the Policy Engine loads a default policy bundle that denies all invocations from all agents. Tool owners must explicitly configure RBAC grants before any agent can invoke the tool. This fail-closed default means a misconfigured or forgotten policy results in no access, not in open access.
+
+---
+
+## Request Flows
+
+### Happy Path — Approved Invocation
+
+An agent sends an MCP tool call to the Proxy with a short-lived JWT bearer token. The Proxy validates the token against the Identity Service, resolves the tool backend from its local routing cache, and calls the Policy Engine with the agent identity, behavior profile, tool ID, and operation. The Policy Engine returns `ALLOW`. The Proxy calls the Rate Limiter — the bucket is available. The Proxy retrieves the tool's credential from the Secret Manager and injects it into the outbound request. The request is forwarded to the tool backend. The response is returned to the agent. The Proxy publishes an `invocation.completed` event to the message bus. The Audit Log Service and Metrics Service consume the event asynchronously.
+
+End-to-end latency overhead attributable to AGP: typically under 10ms at p99 for the synchronous path (token validation, policy evaluation, rate limit check, secret retrieval).
+
+### Denied Invocation
+
+Policy Engine returns `DENY`. The Proxy publishes `invocation.denied` with the deny reason to the message bus, returns `403 Forbidden` to the agent with a structured reason string, and does not forward the request. The Audit Log Service records the denial. The Metrics Service increments the denial counter and evaluates anomaly rules — a spike in denials from a single agent triggers an alert via the Notification Service.
+
+### Human-in-the-Loop — HOLD
+
+Policy Engine returns `HOLD`. The Proxy submits the full request snapshot (agent identity, target tool, complete input payload, timestamp) to the Approval Service and holds the agent connection open. The Approval Service stores the pending request in Postgres and calls the Notification Service, which fans out to the configured channels: Slack (with interactive approve/deny buttons), PagerDuty, email, and the AGP UI approval queue.
+
+A reviewer sees the request in Slack or the UI: the agent identity, the target tool, the full input payload, and the policy reason for escalation. One click submits a decision. The Approval Service signals the waiting Proxy instance via Redis pub/sub. If approved, the Proxy retrieves credentials and forwards the request. If denied, the Proxy returns `403` to the agent. The complete audit trail — hold duration, reviewer identity, and decision — is written by the Audit Log Service.
+
+### Rate Limited — Throttled Invocation
+
+The Proxy calls the Rate Limiter after an `ALLOW` from the Policy Engine. The token bucket for this agent-tool pair is empty. The Rate Limiter returns `THROTTLE` with a retry-after value. The Proxy returns `429 Too Many Requests` with a `Retry-After` header. If the quota is fully exhausted, the Metrics Service triggers a `quota.exhausted` event and the Notification Service notifies the tool owner and the agent's team lead.
+
+---
+
+## Deployment Model
+
+
+AGP is designed as a distributed runtime governance plane composed of independently deployable services that can operate across centralized, self-hosted, hybrid, and cloud-native deployment environments. A Kubernetes-based deployment model is one supported implementation approach, not an architectural requirement.
+
+**More details coming soon.**
+
+---

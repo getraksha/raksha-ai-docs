@@ -1,0 +1,52 @@
+---
+id: patent-behavior-profiles
+title: Behavior Profiles & Agent Identity Governance
+sidebar_label: Behavior Profiles & Agent Identity
+description: Patent pending — identity-bound operating envelopes for autonomous AI agent governance.
+---
+
+# Behavior Profiles & Agent Identity Governance
+
+<div style={{display:'flex',gap:'0.75rem',flexWrap:'wrap',margin:'1rem 0 2rem'}}>
+  <span style={{background:'rgba(74,144,217,0.1)',border:'1px solid rgba(74,144,217,0.4)',color:'var(--ifm-color-primary)',borderRadius:'20px',padding:'0.25rem 0.9rem',fontSize:'0.78rem',fontWeight:600}}>Patent Pending</span>
+  <span style={{background:'var(--ifm-background-surface-color)',border:'1px solid var(--ifm-toc-border-color)',borderRadius:'20px',padding:'0.25rem 0.9rem',fontSize:'0.78rem',fontWeight:600,color:'var(--ifm-color-content-secondary)'}}>USPTO Provisional Patent Application · Filed May 2026</span>
+  <span style={{background:'var(--ifm-background-surface-color)',border:'1px solid var(--ifm-toc-border-color)',borderRadius:'20px',padding:'0.25rem 0.9rem',fontSize:'0.78rem',fontWeight:600,color:'var(--ifm-color-content-secondary)'}}>Inventor: Naveen Kumar Vandanapu</span>
+</div>
+
+---
+
+## The Problem
+
+AI agents are assigned identities — names, credentials, access tokens — but those identities carry no inherent constraints on behavior. An agent identity today is closer to an API key than to a governed operational role: it grants access, but does not encode what the agent is approved to do, how autonomously it may act, or what runtime context constraints it must satisfy before any action is permitted.
+
+This creates a fundamental governance gap. In enterprise environments, the same agent codebase may run in development, canary, and production contexts — each requiring different tool access, different data scopes, different autonomy levels, and different escalation thresholds. None of that context is captured in the identity itself. Policy systems that evaluate identity alone are making partial decisions.
+
+The deeper problem is that existing authorization frameworks were designed for human operators performing predictable, bounded actions. Autonomous agents operate differently: their behavior changes dynamically based on task objectives, available tools, accumulated context, and prior reasoning. Static ACLs cannot express the operational envelope of an autonomous agent.
+
+## The Invention
+
+This patent covers **identity-bound behavior profiles** — a new abstraction that binds a verified agent identity to an approved, versioned operating envelope that governs every dimension of that agent's permitted behavior at runtime.
+
+A behavior profile is not a permission list. It is a complete specification of what an agent is approved to do, under what conditions, with what degree of autonomy, and against what runtime context constraints — evaluated together at the moment of every action.
+
+The key inventive elements are:
+
+**Identity-behavior binding.** An agent identity is not sufficient for authorization. Authorization requires the combination of a verified identity and an active, approved behavior profile. A single agent identity may be associated with multiple profiles — each encoding a different operating envelope for a different deployment context (QA, canary, production, elevated-privilege). The active profile is resolved at runtime and presented to the policy engine alongside the identity.
+
+**Behavior profile composition.** A profile specifies: which tools the agent may invoke (by tool ID and operation), which data scopes it may access (using a two-tier scope model of built-in and enterprise-custom labels), what autonomy level it operates under (fully autonomous, human-in-the-loop for specific tool categories, or human-confirmation-required for all writes), what runtime context constraints it must satisfy (time windows, environment tags, caller context), and what cost and rate limits apply to its execution.
+
+**Approval-gated profile activation.** Behavior profiles are not self-serve. They go through an approval workflow before activation. A profile in `DRAFT` state is not enforceable. Activation requires explicit sign-off from designated approvers — tool owners, security leads, or platform administrators — depending on the sensitivity tier of the tools included. This approval record becomes part of the immutable audit trail.
+
+**Multi-profile agent execution.** A single agent identity can hold multiple behavior profiles simultaneously. Each profile is independently versioned, independently approved, and independently activatable. This allows the same agent to operate under different governed behaviors depending on deployment context — without requiring separate agent identities, separate credential sets, or separate policy configurations for each context.
+
+**Runtime context evaluation.** The policy engine evaluates the active behavior profile not in isolation, but against the runtime context of the specific invocation: which tool is being called, what the input attributes are, what time it is, what environment the agent is running in, and what the accumulated session state looks like. Authorization is a function of identity, profile, tool, and context — evaluated together.
+
+## Why This Matters
+
+The behavior profile abstraction closes the gap between static identity-based access control and the dynamic, context-sensitive governance that autonomous agents require. It makes the approved operating envelope of an agent explicit, versioned, auditable, and enforceable at runtime — as infrastructure, not as convention.
+
+Enterprises deploying autonomous agents need to be able to answer: what is this agent approved to do? Under this architecture, that question has a precise, verifiable answer at every point in the agent's lifecycle.
+
+---
+
+*Naveen Kumar Vandanapu — Founder, Raksha AI · [getraksha.com](https://getraksha.com)*

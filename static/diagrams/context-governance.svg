@@ -1,0 +1,58 @@
+<svg viewBox="0 0 760 400" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>Context Governance Architecture</title>
+  <desc>Three capability surfaces feed into the Context Accumulator, which passes through a Context Firewall before reaching the LLM.</desc>
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#1a6db5"/>
+    </marker>
+    <marker id="arr-red" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#b91c1c"/>
+    </marker>
+    <marker id="arr-green" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#15803d"/>
+    </marker>
+  </defs>
+  <rect width="760" height="400" fill="#f6f8fa" rx="12"/>
+  <text x="100" y="32" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" font-weight="600" fill="#57606a" letter-spacing="0.05em">CONTEXT-PRODUCING CAPABILITY SURFACES</text>
+  <rect x="20" y="50" width="160" height="60" rx="8" fill="#fff7ed" stroke="#c2410c" stroke-width="1.5"/>
+  <text x="100" y="76" text-anchor="middle" font-family="Inter,sans-serif" font-size="13" font-weight="700" fill="#c2410c">CaSH</text>
+  <text x="100" y="96" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="#7c3d12">Context-Aware Shell</text>
+  <rect x="20" y="160" width="160" height="60" rx="8" fill="#fdf4ff" stroke="#7e22ce" stroke-width="1.5"/>
+  <text x="100" y="186" text-anchor="middle" font-family="Inter,sans-serif" font-size="13" font-weight="700" fill="#7e22ce">CABR</text>
+  <text x="100" y="206" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="#581c87">Context-Aware Browser</text>
+  <rect x="20" y="270" width="160" height="60" rx="8" fill="#f0fdf4" stroke="#15803d" stroke-width="1.5"/>
+  <text x="100" y="296" text-anchor="middle" font-family="Inter,sans-serif" font-size="13" font-weight="700" fill="#15803d">MCP</text>
+  <text x="100" y="316" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="#14532d">Tool Outputs</text>
+  <rect x="230" y="100" width="155" height="180" rx="10" fill="#bfdbfe" stroke="#1a6db5" stroke-width="2"/>
+  <text x="307" y="128" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="700" fill="#1a6db5" letter-spacing="0.04em">CONTEXT</text>
+  <text x="307" y="144" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="700" fill="#1a6db5" letter-spacing="0.04em">ACCUMULATOR</text>
+  <line x1="245" y1="155" x2="370" y2="155" stroke="#1a6db5" stroke-width="1" opacity="0.3"/>
+  <g font-family="Inter,sans-serif" font-size="11" fill="#0550ae">
+    <text x="250" y="176">→ file reads</text>
+    <text x="250" y="196">→ env vars</text>
+    <text x="250" y="216">→ browser state</text>
+    <text x="250" y="236">→ tool responses</text>
+    <text x="250" y="256">→ agent memory</text>
+  </g>
+  <rect x="440" y="120" width="130" height="140" rx="10" fill="#fff1f2" stroke="#b91c1c" stroke-width="2"/>
+  <text x="505" y="152" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="700" fill="#b91c1c" letter-spacing="0.04em">CONTEXT</text>
+  <text x="505" y="167" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="700" fill="#b91c1c" letter-spacing="0.04em">FIREWALL</text>
+  <line x1="452" y1="177" x2="558" y2="177" stroke="#b91c1c" stroke-width="1" opacity="0.3"/>
+  <g font-family="Inter,sans-serif" font-size="10.5" fill="#9f1239">
+    <text x="455" y="198">🚫 PII blocked</text>
+    <text x="455" y="217">🚫 Secrets stripped</text>
+    <text x="455" y="236">✓  Policy approved</text>
+  </g>
+  <rect x="630" y="145" width="110" height="90" rx="10" fill="#f0fdf4" stroke="#15803d" stroke-width="1.5"/>
+  <text x="685" y="183" text-anchor="middle" font-family="Inter,sans-serif" font-size="14" font-weight="700" fill="#15803d">LLM</text>
+  <text x="685" y="200" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#14532d">Governed context</text>
+  <text x="685" y="215" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#14532d">only</text>
+  <g stroke="#1a6db5" stroke-width="1.5" fill="none" marker-end="url(#arr)">
+    <line x1="182" y1="80" x2="228" y2="155"/>
+    <line x1="182" y1="190" x2="228" y2="190"/>
+    <line x1="182" y1="300" x2="228" y2="230"/>
+  </g>
+  <line x1="387" y1="190" x2="437" y2="190" stroke="#b91c1c" stroke-width="2" fill="none" marker-end="url(#arr-red)"/>
+  <line x1="572" y1="190" x2="628" y2="190" stroke="#15803d" stroke-width="2" fill="none" marker-end="url(#arr-green)"/>
+  <text x="380" y="370" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#57606a" opacity="0.8">Agents only reason over what they're allowed to know — enforced before every inference.</text>
+</svg>

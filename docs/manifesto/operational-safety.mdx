@@ -1,0 +1,277 @@
+---
+id: operational-safety
+title: Operational Safety for Agentic AI
+sidebar_label: Operational Safety
+description: The foundational manifesto — governing what agents can do and what they can acquire & know.
+slug: /manifesto/operational-safety
+---
+
+import {useState} from 'react';
+
+export const DiagramCarousel = () => {
+  const [idx, setIdx] = useState(0);
+  const diagrams = [
+    {
+      src: '/diagrams/agp-architecture.svg',
+      label: 'Pillar 1 — Action Governance',
+      caption: 'AGP intercepts every agent-to-tool call at runtime. Identity, behavior profile, and policy are evaluated together before any action executes.',
+    },
+    {
+      src: '/diagrams/context-governance.svg',
+      label: 'Pillar 2 — Context Governance',
+      caption: 'CaSH, CABR, and MCP interceptors feed the Context Accumulator. The Context Firewall decides what reaches the LLM — before every inference.',
+    },
+  ];
+  const d = diagrams[idx];
+  return (
+    <div style={{ margin: '2rem 0' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '1rem' }}>
+        {diagrams.map((item, i) => (
+          <button
+            key={i}
+            onClick={() => setIdx(i)}
+            style={{
+              padding: '0.3rem 1rem',
+              borderRadius: 20,
+              border: '1px solid var(--ifm-color-primary)',
+              background: i === idx ? 'var(--ifm-color-primary)' : 'transparent',
+              color: i === idx ? '#fff' : 'var(--ifm-color-primary)',
+              cursor: 'pointer',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              fontFamily: 'Inter, sans-serif',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+      <img
+        src={d.src}
+        alt={d.label}
+        style={{ width: '100%', borderRadius: 8, border: '1px solid var(--ifm-toc-border-color)' }}
+      />
+      <p style={{ textAlign: 'center', fontSize: '0.875rem', color: 'var(--ifm-color-content-secondary)', marginTop: '0.75rem', lineHeight: 1.6 }}>
+        {d.caption}
+      </p>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+        {diagrams.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setIdx(i)}
+            aria-label={`Show diagram ${i + 1}`}
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              border: 'none',
+              cursor: 'pointer',
+              padding: 0,
+              background: i === idx ? 'var(--ifm-color-primary)' : 'var(--ifm-toc-border-color)',
+              transition: 'background 0.15s ease',
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+# Operational Safety for Agentic AI
+
+**Raksha AI — May 2026**
+
+---
+
+## The Shift That Changes Everything
+
+For decades, software security was built around a simple model: humans decide actions, systems execute them. Access controls, audit logs, and compliance frameworks were all designed with a human in the decision seat — even if that human was clicking "approve" on a workflow.
+
+That model is breaking.
+
+AI agents don't just answer questions. They take actions. They send emails, execute database queries, call APIs, run shell commands, navigate browsers, and trigger financial workflows — autonomously, at machine speed, often without a human in the loop. The blast radius of a misconfigured or compromised agent is not a bad answer. It's an irreversible enterprise action. And the consequences are real-world operational, financial, and security failures: data exfiltration, production outages, compliance violations, and cascading failures across enterprise systems.
+
+This is a fundamentally different risk profile, and the security industry has not caught up.
+
+---
+
+## Two Problems, One Platform
+
+Operational safety for agentic AI has two distinct dimensions. Most frameworks address neither.
+
+<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem',margin:'1.5rem 0'}}>
+  <div style={{padding:'1.25rem 1.5rem',borderRadius:'8px',border:'1px solid rgba(74,144,217,0.4)',background:'rgba(74,144,217,0.06)'}}>
+    <div style={{fontSize:'0.7rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.1em',color:'#4a90d9',marginBottom:'0.5rem'}}>Action Surface</div>
+    <div style={{fontSize:'1rem',fontWeight:600,marginBottom:'0.4rem'}}>What can agents <em>do</em>?</div>
+    <div style={{fontSize:'0.82rem',color:'var(--ifm-color-content-secondary)',lineHeight:1.6}}>Tools, APIs, credentials, blast radius — governed by the Agent Governance Plane.</div>
+  </div>
+  <div style={{padding:'1.25rem 1.5rem',borderRadius:'8px',border:'1px solid rgba(157,74,217,0.4)',background:'rgba(157,74,217,0.06)'}}>
+    <div style={{fontSize:'0.7rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.1em',color:'#9d4ad9',marginBottom:'0.5rem'}}>Context Surface</div>
+    <div style={{fontSize:'1rem',fontWeight:600,marginBottom:'0.4rem'}}>What can agents <em>know</em>?</div>
+    <div style={{fontSize:'0.82rem',color:'var(--ifm-color-content-secondary)',lineHeight:1.6}}>Shell output, browser state, tool responses, secrets — governed by Context Governance.</div>
+  </div>
+</div>
+
+<DiagramCarousel />
+
+
+### What can agents do?
+
+Agents are no longer passive software systems that only generate text. They take actions. They send emails, execute database queries, invoke APIs, run shell commands, navigate browsers, deploy infrastructure, and trigger financial workflows — often autonomously and at machine speed.
+
+To perform these actions, agents require credentials and access to tools, APIs, databases, cloud systems, and external services. Without governance, every agent you deploy accumulates capability — often more than it needs, often without oversight, and almost always without an audit trail.
+
+This is the **action governance problem**. An agent with write access to your CRM and your email system can send 500 outbound messages before a human notices. An agent with delete permissions on a production database can cause irreversible damage in seconds. A multi-agent pipeline can cascade a bad decision across your entire workflow faster than any human can intervene.
+
+Existing approaches — API keys in environment variables, fragmented per-tool controls, and manual policy reviews — collapse under a world where every team is deploying autonomous agents.
+
+### What can agents acquire & know?
+
+Operational risk does not begin when an agent takes an action. It begins when an agent acquires context.
+
+Every shell command output, browser session, API response, screenshot, DOM tree, tool result, filesystem read, and authenticated web page becomes part of the agent's reasoning state. Once sensitive information enters the context window, it can influence planning, decision-making, downstream tool calls, memory systems, and external communications.
+
+This is the **context governance problem**. Modern agents inherit enormous amounts of ambient authority through the environments they operate in. A browser agent does not need to steal credentials — the browser already holds them. A coding agent asked to "summarize this repository" may recursively ingest `.env` files, cloud credentials, OAuth tokens, database connection strings, customer data, and production configurations without any explicit malicious intent.
+
+By the time the model reasons over the information, the security boundary has already failed.
+
+Context is not merely model input. Context is operational capability.
+
+---
+
+## Why Traditional Security Assumptions Fail
+
+Traditional security architectures were designed for deterministic software operating under human intent. Autonomous agents fundamentally change that model.
+
+Existing systems lack runtime governance for agentic execution. **MCP** standardized how agents communicate with tools, but critical operational safety primitives remain outside the protocol itself: runtime policy enforcement, capability visibility, approval workflows, cost governance, credential mediation, and action-level authorization. 
+
+Existing security systems also lack governance over **context acquisition** before information enters the model's reasoning state. At the shell and filesystem layer, agents can recursively read repositories, configuration files, credentials, cloud tokens, deployment manifests, and sensitive operational data with little or no policy enforcement outside the agent itself. Traditional operating system security models govern users and processes — not what an autonomous system is allowed to absorb into its reasoning state. Browser environments break security assumptions in an even more dangerous way because authenticated browser state — cookies, session tokens, localStorage, authorization headers, and active sessions — is inherited automatically by agents operating inside the browser runtime.
+
+Most existing security systems are observational rather than preventative. Audit logs and post-hoc monitoring are necessary, but insufficient for autonomous systems operating at machine speed. By the time an audit event is recorded, sensitive data may already be exposed, infrastructure may already be mutated, and downstream systems may already be affected. Operational safety requires runtime enforcement before actions execute and before sensitive context enters the model's reasoning state.
+
+
+Traditional authorization systems are also too static for autonomous systems. They were designed around long-lived software identities and human operators performing relatively predictable actions. Autonomous agents operate differently: their behavior changes dynamically based on runtime context, available capabilities, task objectives, environmental state, and prior reasoning. Authorization for agentic systems can no longer rely on identity alone — it must evaluate operational context, runtime intent, risk level, and whether human escalation is required before execution.
+
+---
+
+## The Architecture
+
+Raksha AI introduces two complementary operational safety layers for agentic systems: runtime governance over what agents can do, and context governance over what agents are allowed to acquire, retain, reason over, and operationalize.
+
+### Pillar 1 — Agent Governance Plane (AGP)
+
+AGP is the runtime enforcement layer between agents and the enterprise MCP tools they can invoke. It sits in the hot path of every MCP tool invocation.
+
+The core insight is that agent identity, an agent's approved behavior profile, runtime context, and tool metadata must be evaluated together at the moment of every action. An agent is not just a credential — it is a stable identity operating under an approved behavior profile, in a specific runtime context, invoking a specific tool. All four dimensions matter. A policy that doesn't see all of them is making a partial decision.
+
+AGP's key components:
+
+- **Identity Service** — stable agent identity, agent lifecycle management, credential lifecycle, token issuance and validation. Every agent has a name, an owner, and a verifiable credential. Identities are immutable; behavior can change.
+
+- **Behavior Profiles** — the approved operating envelope for an agent. They define which tools an agent can see and call, which data scopes it can access, what autonomy level it operates under, and what runtime context constraints it must satisfy. Behavior profiles go through an approval workflow before activation. A single agent identity can be associated with multiple behavior profiles, allowing the same agent to operate under different governed behaviors and autonomy constraints depending on the behavior profile attached to it.
+
+- **Registry Service** — the system of record for enterprise MCP tools. Stores tool metadata such as name, description, ownership information, backend routing configuration, authentication configuration, and MCP schemas used for discovery, routing, and runtime evaluation.
+
+- **Policy Engine** — OPA-based runtime evaluation of every invocation against the agent identity, active behavior profile, tool metadata, and runtime context. Returns ALLOW, DENY, or HOLD (requires human approval).
+
+- **Hot-Path Proxy** — the enforcement point for every agent-to-MCP tool invocation. The proxy authenticates the agent, resolves the behavior profile, evaluates policy, enforces the decision, injects MCP tool credentials at runtime so agents never hold them, and emits an immutable audit event.
+
+- **Approval Service** — the human-in-the-loop layer. When policy returns HOLD, the invocation is blocked and escalated for approval. The agent is informed that the requested action requires human review before execution. The reviewer sees the full request payload, the agent identity, the active behavior profile, and the policy reason for escalation. One click approves or denies the request.
+
+- **Audit & Observability** — append-only audit logs, metrics, traces, and runtime telemetry for every invocation, policy decision, escalation event, and approval or denial. Not just that something happened — but who initiated it, under which behavior profile, in which runtime context, against which tool, and why it was allowed, blocked, or escalated.
+
+- **Rate Limiter** — cost and abuse control for autonomous tool execution. Agents can enter retry loops, recursive plans, or runaway execution paths that repeatedly invoke expensive MCP tools, including tools that call paid external APIs or consume cloud resources. The rate limiter enforces per-agent, per-tool, per-behavior-profile, and per-tenant limits so an agent cannot create uncontrolled operational cost through runaway tool execution.
+
+- **Notification Service** — delivers policy escalation and approval events to the right humans and systems. When an invocation is blocked, escalated, or requires review, the notification service routes the event through Slack, email, web UI, or other enterprise channels with the relevant context: agent identity, active behavior profile, requested tool, policy reason, risk level, and approval link.
+
+### Pillar 2 — Context Governance
+
+Context governance addresses the dimension AGP does not: not what agents can do, but what they are allowed to acquire, retain, reason over, and operationalize.
+
+The core insight is that every context acquisition method available to an autonomous agent becomes part of its cognitive boundary — and context itself is the attack surface.
+
+Context Governance key components:
+
+**CaSH — Context-Aware Shell** — Shell, filesystem, and execution-layer governance for autonomous agents. Intercepts context-producing operations at the shell, filesystem, and kernel layers through shell mediation, FUSE interception, and eBPF-based syscall governance before sensitive content enters the agent’s reasoning state.
+
+**CABR — Context-Aware Browser Runtime** — Browser-layer governance for autonomous browser agents. Governs browser-derived context including DOM state, screenshots, cookies, localStorage, accessibility trees, session tokens, and authenticated browser state before that information enters the model’s context window.
+
+**Context Accumulator** — Governed context assembly and provenance tracking for agent cognition. Tracks what information entered context, where it came from, which policies governed it, what transformations were applied, how long it may persist, and whether it may be operationalized.
+
+**Context Firewall** — Final pre-send governance layer positioned between assembled agent context and remote AI model APIs. Inspects outbound context payloads, applies policy, blocks or redacts sensitive information, and provides defense-in-depth before transmission to external models.
+
+**Policy Engine** — Policy-mediated governance for context acquisition, admission, transformation, retention, operationalization, and transmission. Evaluates runtime policies against context-producing operations before information enters agent cognition.
+
+**Session Context Model** — Stateful cross-command and cross-operation governance model that tracks accumulated context, sensitive paths, prior reads, context destination, operational scope, and session-level cognition state across the lifetime of an autonomous agent session.
+
+**Redaction & Transformation Engine** — Applies output-level governance before context admission through masking, token replacement, semantic summarization, structured metadata extraction, truncation, and policy-aware transformations.
+
+**Secret & Sensitive Data Detection** — Detects credential-bearing content, sensitive files, secrets, tokens, high-entropy strings, private keys, connection strings, and other governed content across shell outputs, browser state, filesystem reads, screenshots, and tool responses.
+
+**Audit & Context Provenance** — Immutable audit records, context provenance tracking, runtime telemetry, and cognition observability across all context-producing operations and context admission decisions.
+
+The three-layer defensive architecture:
+
+```
+Layer 1 — Context Acquisition Surface Interception
+          CaSH (shell/FUSE/eBPF), CABR (browser runtime),
+          MCP proxy, screenshot sanitizer, API client interceptor
+
+Layer 2 — Context Accumulation
+          Session context model tracking what the agent has acquired,
+          from which surfaces, over what time window
+
+Layer 3 — Context Firewall
+          Policy evaluation before context flows to the LLM.
+          What can this agent, under this profile, know right now?
+```
+
+This architecture establishes a foundational principle: governance must be applied at the execution and context acquisition layers, not merely at the tool abstraction layer. Tool names and interfaces are abstractions; operational risk and context acquisition occur at the underlying execution surfaces.
+
+---
+
+## The Empirical Case
+
+This is not a theoretical framework.
+
+In May 2026, we ran a controlled test using a production browser agent framework against a local test server loaded with simulated enterprise credentials. A single innocent prompt — *"summarize this page"* — caused the agent to expose the following to the language model in three steps, without any explicit credential-theft attempt:
+
+- AWS access key and secret
+- Stripe live API key
+- PostgreSQL connection string with production password
+- Three customer Social Security Numbers
+- Kubernetes service account token
+- Webhook signing secret
+
+The agent was not compromised. It was not prompt-injected. It was doing exactly what it was designed to do: read a page and summarize it. The browser handed it an authenticated session. The DOM contained secrets embedded in hidden fields, JavaScript variables, and HTML comments — exactly as real enterprise applications do.
+
+This is the ambient authority problem. The agent didn't take anything. The browser gave it everything.
+
+CABR exists to establish a governance boundary between that surface and the model's reasoning. CABR would have classified those credential patterns before they entered the context window and applied the behavior profile's data scope restrictions to decide what the agent was permitted to acquire & know.
+
+---
+
+## What We're Building
+
+Raksha AI is developing AGP and Context Governance as a unified operational safety platform. We believe operational safety infrastructure for agentic AI should evolve through open architectures, interoperable standards, and community collaboration.
+
+**Patent pending:**
+- Identity-bound behavior profiles for runtime governance of autonomous agents (USPTO provisional filed May 2026)
+- Context governance, CaSH, and CABR — policy-mediated governance of what autonomous systems acquire, retain, reason over, and operationalize across shell, browser, MCP, filesystem, and other context acquisition surfaces (USPTO provisional filed May 2026)
+
+---
+
+## The Principle
+
+Every agent you deploy is a new risk surface you are not managing yet.
+
+The agents are already running. The question is whether you are governing what they can do and what they can acquire & know — or accumulating risk you haven't measured.
+
+Operational safety for agentic AI is not a compliance checkbox. It is the foundational infrastructure layer that makes autonomous AI systems trustworthy enough to run at enterprise scale.
+
+That infrastructure does not exist yet at the level it needs to. We are building it.
+
+---
+
+*Naveen Kumar Vandanapu — Founder, Raksha AI · [getraksha.com](https://getraksha.com)*

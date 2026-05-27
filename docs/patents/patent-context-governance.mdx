@@ -1,0 +1,68 @@
+---
+id: patent-context-governance
+title: Context Governance, CaSH & CABR
+sidebar_label: Context Governance & CaSH
+description: Patent pending — policy-mediated governance of what autonomous AI agents acquire, retain, reason over, and operationalize.
+---
+
+# Context Governance, CaSH & CABR
+
+<div style={{display:'flex',gap:'0.75rem',flexWrap:'wrap',margin:'1rem 0 2rem'}}>
+  <span style={{background:'rgba(157,74,217,0.1)',border:'1px solid rgba(157,74,217,0.4)',color:'#9d4ad9',borderRadius:'20px',padding:'0.25rem 0.9rem',fontSize:'0.78rem',fontWeight:600}}>Patent Pending</span>
+  <span style={{background:'var(--ifm-background-surface-color)',border:'1px solid var(--ifm-toc-border-color)',borderRadius:'20px',padding:'0.25rem 0.9rem',fontSize:'0.78rem',fontWeight:600,color:'var(--ifm-color-content-secondary)'}}>USPTO Provisional Patent Application · Filed May 2026</span>
+  <span style={{background:'var(--ifm-background-surface-color)',border:'1px solid var(--ifm-toc-border-color)',borderRadius:'20px',padding:'0.25rem 0.9rem',fontSize:'0.78rem',fontWeight:600,color:'var(--ifm-color-content-secondary)'}}>Inventor: Naveen Kumar Vandanapu</span>
+</div>
+
+---
+
+## The Problem
+
+The security industry has spent decades governing what software systems can *do*. Access controls, firewalls, and authorization frameworks all focus on the action surface — preventing systems from taking actions they are not permitted to take.
+
+Autonomous agents introduce a second attack surface that existing infrastructure does not govern: the *context surface*. Every shell command an agent runs, every web page a browser agent loads, every tool response it receives, every file it reads — these all flow into the agent's context window and become part of its reasoning state. Once sensitive information enters that context window, it can influence decisions, shape downstream tool calls, propagate through memory systems, and be operationalized in ways that were never authorized.
+
+The context surface is not governed by action controls. An agent that is perfectly well-governed at the action layer — that cannot invoke tools it is not authorized to use — can still cause significant harm through what it acquires and reasons over. A browser agent asked to "summarize this page" may expose AWS keys, database passwords, OAuth tokens, and customer PII to the language model without invoking a single unauthorized tool. A coding agent asked to "fix this bug" may recursively read environment files, cloud credentials, and deployment configurations as part of its normal task execution.
+
+This is the ambient authority problem. The agent did not take anything. The environment gave it everything.
+
+## The Invention
+
+This patent covers a unified **context governance architecture** — a new infrastructure layer that governs what autonomous agents are permitted to acquire, retain, reason over, and operationalize across all capability surfaces, before information enters the model's cognition.
+
+The architecture introduces three novel components:
+
+### CaSH — Context-Aware Shell
+
+CaSH is the shell, filesystem, and execution-layer governance component. It addresses a specific bypass vector: an agent that can execute shell commands can acquire any information on the host system — credentials, configuration files, environment variables, deployment secrets — regardless of what tool-name policies permit. Tool-name governance is bypassed the moment the agent has shell access.
+
+CaSH intercepts context-producing operations at three layers. **Shell mediation** evaluates commands before execution against the agent's active behavior profile and the current session context model. **FUSE-based filesystem interception** governs read operations at the virtual filesystem layer — before file contents flow into agent output — for sensitive paths including credential files, cloud configuration directories, SSH keys, and environment files. **eBPF-based syscall governance** operates at the kernel layer, providing an enforcement boundary that no userspace implementation can bypass, governing context acquisition regardless of how it is initiated — through the agent's tool interface, through a spawned subprocess, or through arbitrary code execution.
+
+The inventive insight is that context governance must operate at the execution layer, not the tool abstraction layer. The execution surface is where actual information acquisition occurs. CaSH closes the gap between tool-name policy and execution-layer reality.
+
+### CABR — Context-Aware Browser Runtime
+
+CABR is the browser-layer governance component. It addresses the ambient authority problem specific to web environments: browser agents inherit the full authenticated state of the browser session before any agent action takes place. Cookies, localStorage, session tokens, HTTP authorization headers, and authenticated sessions are all ambient — present in the environment before the agent does anything, and automatically accessible from the moment the browser navigates to a page.
+
+CABR establishes a policy layer between the browser's ambient authority and what the agent is permitted to acquire. It classifies DOM content, visual captures, storage state, and authenticated session data against the agent's active behavior profile before that information enters the context window. Content classified under labels the agent's profile does not include — credentials, PII, financial data — is redacted or blocked before the model sees it.
+
+The inventive insight is that ambient authority is not the same as granted access. Browser agents require governance at the runtime layer — before context flows — not just governance over the tools they are allowed to invoke.
+
+### Context Accumulator and Context Firewall
+
+The **Context Accumulator** maintains a stateful session context model that tracks everything the agent has acquired across its session: what information came from which surface, under which policies, at what time, classified under which sensitivity labels, and subject to what retention constraints.
+
+The **Context Firewall** is the final pre-inference enforcement point. It evaluates the assembled context payload against the active behavior profile's data scope constraints before it is submitted to the model — and operates as a pre-transmission gateway for remote model API calls, providing defense-in-depth before governed content leaves the trust boundary.
+
+The three-layer architecture — capability surface interception, context accumulation, context firewall — provides independent protection at each stage. A failure at one layer does not compromise the others.
+
+## Why This Matters
+
+This architecture establishes a new category of infrastructure: **context governance**. It is not a complement to action governance — it is a separate and equally necessary primitive. Action governance controls what agents can do. Context governance controls what agents can acquire & know.
+
+Together they form the complete operational safety plane for autonomous AI systems. An enterprise that governs only the action surface has closed half the attack surface. An enterprise that governs both can make a verifiable claim about what its agents are permitted to do and what they are permitted to acquire & know — at runtime, at scale, with an immutable audit trail.
+
+That claim is what operational safety for agentic AI actually means.
+
+---
+
+*Naveen Kumar Vandanapu — Founder, Raksha AI · [getraksha.com](https://getraksha.com)*
