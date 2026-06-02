@@ -1,0 +1,126 @@
+---
+id: cafs
+title: CaFS — Context-Aware File System
+sidebar_label: CaFS
+description: FUSE-based filesystem context governance for autonomous agents — governing what agents can acquire from the filesystem before it enters their reasoning state.
+---
+ 
+# CaFS — Context-Aware File System
+ 
+**Raksha AI — June 2026**
+ 
+---
+ 
+## Overview
+ 
+CaFS is the filesystem-layer governance component of the Context Governance architecture. It is built on a simple but important principle:
+
+> Filesystem reads are context acquisition events.
+
+For autonomous systems, reading is not a passive operation. The moment an agent reads a file, that information can become part of its reasoning state, influence future decisions, appear in generated outputs, be stored in memory systems, or be operationalized through downstream actions. From a context governance perspective, a filesystem read is therefore a privileged operation that must be governed.
+ 
+The problem CaFS addresses is simple to state and easy to underestimate: **when a coding agent operates on a repository, it acquires far more than the files it was asked to touch.**
+ 
+A developer asking an agent to "fix this bug" or "summarize this codebase" expects the agent to read the relevant source files. What actually happens is different. The agent reads the obvious files — and then reads `.env`, `.env.production`, `docker-compose.yml`, `.git/config`, `config.json`, terraform.tfvars, and whatever else it encounters while traversing the directory tree. It is not doing anything wrong. It is doing what agents do: gathering context to reason effectively. The problem is that traditional filesystems do not distinguish between source code, operational configuration, credentials, secrets, and sensitive enterprise data. Without a governance layer, neither does the agent.
+ 
+CaFS establishes that distinction. It transforms the filesystem from a passive storage layer into an active cognition-governance layer. Positioned between the agent process and the underlying filesystem through a FUSE-based interposition layer, CaFS intercepts file access operations, classifies what the agent is attempting to acquire, evaluates policy, and governs what information is permitted to enter the agent’s reasoning state.
+
+
+Unlike output scanning or post-hoc redaction, CaFS governs context before it is acquired. Sensitive content can be denied, transformed, summarized, redacted, or approval-gated before it ever becomes part of the agent’s context window. This shifts governance to the earliest possible point in the information acquisition pipeline and ensures that sensitive content does not become operationally available to the agent simply because it happened to exist somewhere in the filesystem.
+
+Every governed read operation produces provenance-aware audit records that explain what was accessed, why it was allowed or denied, which policies applied, and what information ultimately became part of the agent’s reasoning state. In this model, the filesystem is no longer merely a source of files — it becomes part of the broader cognition-governance architecture that controls what autonomous systems are allowed to acquire, retain, reason over, and operationalize.
+ 
+![CaFS interposition layer — FUSE-based governance between agent process and filesystem](/diagrams/CaFS.png)
+ 
+---
+ 
+## The Filesystem as a Context Acquisition Surface
+
+The filesystem is one of the largest and least-governed context acquisition surfaces available to autonomous agents.
+
+A coding agent operating on a repository may access source code, environment files, cloud credentials, deployment manifests, Docker configurations, git history, CI/CD definitions, migration scripts, and other operational artifacts while gathering context. Any of these can become part of the agent's reasoning state during normal operation.
+
+Traditional security controls govern access at the process level, not the context level. A process with read access to a directory can read every file within it, regardless of whether that information is necessary for the task being performed. The operating system cannot distinguish between relevant context and unnecessary sensitive context. CaFS introduces that distinction as a governance boundary.
+
+Traditional security controls govern access at the process level, not the context level. Operating systems answer whether a process is permitted to read a file; they do not evaluate whether the information in that file is necessary for the agent's task, appropriate for the agent's scope, or safe to admit into the agent's reasoning state. CaFS introduces that distinction as a governance boundary.
+ 
+<div style={{padding:'1.25rem 1.5rem',borderRadius:'8px',border:'1px solid rgba(157,74,217,0.4)',background:'rgba(157,74,217,0.06)',margin:'1.5rem 0'}}>
+  <div style={{fontSize:'0.7rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.1em',color:'#9d4ad9',marginBottom:'0.5rem'}}>Key Insight</div>
+  <div style={{fontSize:'1rem',fontWeight:600,lineHeight:1.6}}>OS authorization is not designed for context governance.</div>
+</div>
+ 
+---
+ 
+## How CaFS Works
+ 
+CaFS operates as a FUSE-based filesystem interposition layer. Rather than modifying the agent, the agent runtime, or the tools the agent uses, CaFS intercepts file operations at the virtual filesystem layer — transparently, without requiring any changes to the agent itself.
+ 
+**FUSE Interception**
+ 
+CaFS mounts a governed virtual filesystem through which the agent operates. Every filesystem operation passes through the CaFS interception layer before reaching the underlying filesystem. The agent sees a normal POSIX filesystem. CaFS sees every operation it performs.
+ 
+**Sensitivity Classification**
+ 
+When an agent attempts to access a file, CaFS evaluates the requested resource against a sensitivity taxonomy before content is returned. Classification may be based on file path, file name patterns, directory location, metadata, or file content depending on policy requirements.
+
+Files are typically classified into sensitivity tiers:
+ 
+- **CRITICAL** — credential-bearing files: `.env`, `.env.*`, private keys, cloud credential files, connection strings containing authentication material
+- **HIGH** — configuration files with operational data: `docker-compose.yml`, `.git/config`, CI/CD manifests, `config.json` and equivalent
+- **MEDIUM** — repository metadata and internal structures: `.git/HEAD`, `.git/COMMIT_EDITMSG`, git object store
+- **LOW** — source code, documentation, and other non-credential content
+**Policy Enforcement**
+ 
+The objective is not to determine whether a process can access a file. It is to determine the governance requirements associated with allowing that information to enter the agent’s reasoning state.
+
+**Policy Enforcement**
+
+For each classified operation, CaFS evaluates the applicable filesystem governance policy before content is returned to the agent. Policy outcomes may include:
+
+- ALLOW — return the content unchanged.
+- REDACT — transform sensitive portions of the content before returning it.
+- SUMMARIZE — provide a policy-compliant summary instead of raw content.
+- DENY — block the operation and return a governed error.
+- REQUIRE_APPROVAL — pause access until a reviewer approves the acquisition.
+
+The governance decision is evaluated before content is returned to the agent, ensuring that sensitive information can be controlled before it becomes part of the agent's reasoning state.
+
+**Session Context Model**
+ 
+CaFS maintains a stateful session context model across the agent's session — tracking cumulative context acquisition, not just individual file reads. This matters because the risk profile of a session is not determined by any single read. It is determined by what the agent has accumulated. An agent that reads ten configuration files across a session may exceed a cumulative data scope boundary that no individual read would trigger. The session context model makes that visible.
+ 
+---
+ 
+## Cognition Observability
+
+Every CaFS session produces a Cognition Observability Record — an immutable, structured audit of filesystem-derived context acquisition. Each file access is classified by sensitivity, timestamped, and linked to the agent session and the governance decisions that controlled admission.
+
+The Cognition Observability Record answers a question that traditional observability systems rarely answer:
+
+> What did the agent know, and when did it know it?
+
+This is fundamentally different from an action audit log. Action logs record what an agent did. Cognition observability records what information became available to the agent, which sensitivity classifications that information carried, what transformations or governance decisions were applied, and whether that information ultimately entered the agent's reasoning state.
+
+Cognition Observability provides the foundation for operational oversight and forensic analysis. It allows operators to reconstruct not only the actions an agent performed, but also the information available to the agent when those actions were taken.
+
+---
+ 
+## Empirical Results
+ 
+The following results are from a live CaFS session monitoring a real coding agent — Claude — operating on a software repository. The task was representative of normal coding agent use: codebase exploration and summarization.
+ 
+**Session summary:**
+
+| Metric | Value |
+|---|---|
+| Total file operations | 25 |
+| Unique files accessed | 20 |
+| Bytes read into context | 15.4 KB |
+| Bytes written | 3.5 KB |
+| Critical sensitivity hits | 5 |
+| Active agents | 1 |
+
+![CaFS dashboard — event timeline, sensitivity breakdown, and session metrics](/diagrams/cafs-db-screenshot-1.png)
+
+![CaFS dashboard — critical & high sensitivity feed, top files accessed, operation distribution](/diagrams/cafs-db-screenshot-2.png)
+---

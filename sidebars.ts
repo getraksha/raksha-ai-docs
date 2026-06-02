@@ -16,6 +16,7 @@ const sidebars: SidebarsConfig = {
         'architecture/agp-overview',
         'architecture/agp-services',
         'architecture/cash',
+        'architecture/cafs',
         'architecture/cabr',
         'architecture/context-firewall',
       ],
