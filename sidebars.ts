@@ -26,6 +26,7 @@ const sidebars: SidebarsConfig = {
       label: '💡 Concepts',
       collapsed: false,
       items: [
+        'concepts/operational-safety',
         'concepts/context-governance',
         'concepts/behavior-profiles',
         'concepts/cognitive-visibility',

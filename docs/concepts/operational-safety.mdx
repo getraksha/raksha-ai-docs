@@ -1,0 +1,80 @@
+---
+id: operational-safety
+title: Operational Safety
+sidebar_label: Operational Safety
+description: What operational safety means for agentic AI, why it's distinct from model safety and guardrails, and what's at stake without it.
+---
+
+# Operational Safety
+
+**Raksha AI — June 2026**
+
+---
+
+## What It Is
+
+Operational safety is the discipline of governing what AI agents **do** and what they **acquire & know** while operating in real environments.
+
+It is not about making models more aligned or improving their reasoning. It is about ensuring that when an AI agent interacts with tools, data, systems, browsers, APIs, or files, it operates within boundaries your organization has defined and approved — regardless of what it was instructed to do, what it discovers along the way, or how it reasons.
+
+The distinction is important. operational safety is primarily an infrastructure and governance problem, not a model problem.
+
+---
+
+## How It Differs from Model Safety and Guardrails
+
+Model safety addresses what a model will or won't say. Guardrails add filters around model inputs and outputs — screening what goes in and what comes out. Both treat the model as the primary control surface.
+
+Operational safety addresses what an agent can **do** and **know** in the real world. It is enforced at the environment layer rather than the model layer.
+
+| | Model Safety / Guardrails | Operational Safety |
+|---|---|---|
+| **Where enforced** | Inside the model or around its inputs and outputs | At the runtime environment layer |
+| **What it governs** | Model behavior and agent-local controls | Organization-defined runtime policies, tool access, shell access, file reads, browser state, and operational actions |
+| **Bypass risk** | Prompt injection, jailbreaks, context manipulation | Independent of model compliance |
+| **Audit** | Conversation history | Action and context auditability |
+
+Modern agent platforms increasingly include their own guardrails, permission prompts, and approval mechanisms. These controls are valuable, but they remain part of the agent runtime itself. Operational safety addresses a different requirement: allowing organizations to define, enforce, audit, and evolve their own policies independently of any particular agent implementation. Enterprise governance cannot depend solely on controls embedded within the agent; it must remain under organizational control.
+
+Hence, model safety and operational safety are complementary, not competing approaches. A well-aligned model operating without operational safety controls can still expose credentials, acquire sensitive information, exfiltrate data, incur excessive cost, or take destructive actions simply because the runtime environment did not enforce appropriate boundaries.
+
+---
+
+## What Happens Without It
+
+When agents operate without operational safety controls, three failure classes emerge — each independent of whether the model behaved correctly:
+
+**Unbounded Autonomy.** Agents invoke tools, shell commands, and APIs based on what seems useful to them. Without runtime enforcement, there is no boundary between what an agent is allowed to do and what it is capable of doing. The blast radius of any failure is bounded by the agent's capabilities — not by enterprise processes or policies.
+
+**Uncontrolled Context Acquisition.** A coding agent asked to fix a bug reads source files — and also `.env`, credentials, cloud configuration, and secrets it encountered while traversing the repository. It did nothing wrong. It was never told it couldn't.
+
+**Fragmented Auditability.** Without a governance layer, organizations lack an authoritative record of what agents accessed, acquired, sent, or changed. When something goes wrong, there may be logs — but not a complete reconstruction of what the agent knew, why it acted, and which policies governed the session.
+
+**Runaway Cost.** Agents that can acquire unlimited context and invoke tools without constraint also consume without constraint. A single agent session that reads hundreds of files, chains dozens of tool calls, and submits oversized context windows to upstream models generates real cost — invisibly, at scale, across every deployment. Without governance, there is no mechanism to enforce frugality. Governed agents are cheaper agents: controlling what an agent can do and know also controls what it consumes.
+
+These are not edge cases. They are the default behavior of capable agents operating in real environments.
+
+---
+
+## Why Operational Safety Matters for AI Adoption
+
+Deploying agents without operational safety is not primarily a technology risk — it is a business risk. Credential exposure, sensitive data acquisition, unauthorized actions, excessive cost, and compliance failures can occur even when the underlying model behaves exactly as intended.
+
+Operational safety introduces governance boundaries around both action and context. It ensures that autonomous systems operate within organizational policies, approval workflows, data access constraints, and cost limits rather than relying solely on model behavior.
+
+At Raksha AI, we approach this through two complementary architectures:
+
+**Agent Governance Plane (AGP)** governs what agents can *do* — enforcing identity, runtime policy, tool access controls, approval workflows, auditability, observability, and cost governance.
+
+**Context Governance** governs what agents can *acquire and know* — controlling what information from shells, filesystems, browsers, MCP tools, and other context acquisition surfaces is permitted to enter an agent's reasoning state.
+
+Together, these controls enable organizations to adopt autonomous systems with confidence, preserving safety, governance, and auditability without sacrificing the speed and benefits of AI adoption.
+
+---
+
+## Where to Go Next
+
+- [Agent Governance Plane](/docs/architecture/agp-overview) — runtime action governance, identity, policy enforcement, and auditability
+- [Context Governance](/docs/concepts/context-governance) — governing what agents can acquire and know
+- [Operational Safety Manifesto](/docs/manifesto/operational-safety) — the architectural case for operational safety
+- [Threat Models and Failure Patterns](/docs/threat-models/browser-context-leakage) — real-world agent failure scenarios and operational risks

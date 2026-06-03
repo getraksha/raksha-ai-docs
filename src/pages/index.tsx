@@ -8,6 +8,7 @@ const features = [
   { icon: '🧠', title: 'Context Governance', desc: 'Policy-mediated control over what agents can acquire, retain, reason over, and operationalize — across shell, browser, MCP, and every capability surface.', href: '/docs/concepts/context-governance' },
   { icon: '🐚', title: 'CaSH', desc: 'Context-Aware Shell. Intercepts agent shell invocations at the execution layer — not the tool-name layer — so no bypass is possible.', href: '/docs/architecture/cash' },
   { icon: '🌐', title: 'CABR', desc: 'Context-Aware Browser Runtime. Governs what browser agents can acquire and know, defending against ambient authority and credential exposure.', href: '/docs/architecture/cabr' },
+  { icon: '📁', title: 'CaFS', desc: 'Context-Aware File System. FUSE-based interposition layer that governs what agents can acquire from the filesystem — before sensitive content ever enters their reasoning state.', href: '/docs/architecture/cafs' },
   { icon: '🪪', title: 'Behavior Profiles', desc: 'Identity-bound operating envelopes for agents. Approved tool access, data scopes, autonomy levels, and runtime context constraints — as code.', href: '/docs/concepts/behavior-profiles' },
   { icon: '🔥', title: 'Context Firewall', desc: "The last line of defense. A policy gate between acquired context and the model's reasoning — ensuring agents only acquire & know what they're allowed to.", href: '/docs/architecture/context-firewall' },
 ];
