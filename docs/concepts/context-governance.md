@@ -2,47 +2,57 @@
 id: context-governance
 title: Context Governance
 sidebar_label: Context Governance
-description: Policy-mediated control over what autonomous agents can acquire, retain, reason over, and operationalize across all capability surfaces.
+description: Governing what AI agents can acquire and know — not just what they can do.
 ---
 
 # Context Governance
 
-**Raksha AI — May 2026**
+**Raksha AI — June 2026**
 
 ---
 
-## Overview
+## What It Is
 
-Context governance is the second pillar of operational safety for agentic AI. Where action governance controls what agents can *do*, context governance controls what agents can *acquire & know* — what they are permitted to acquire, retain, reason over, and operationalize from the environments they operate in.
+Context governance is the discipline of controlling what an AI agent is allowed to acquire and know — what information it may read, retain, reason over, and operationalize.
 
-The distinction matters because harm does not begin only when an agent takes an unauthorized action. It begins when an agent acquires information it was never meant to have. A browser agent asked to summarize a page inherits an authenticated browser session and everything it holds. A coding agent asked to fix a bug may recursively read credential files, environment variables, and cloud configuration as part of its normal execution. A shell-capable agent can enumerate secrets from the host filesystem without invoking a single tool-name-governed operation.
+Agents do not act in isolation. Before they take action, they gather context — from files, browser sessions, tools, APIs, screenshots, logs, and other information sources. That context shapes every decision they make. Context governance introduces a policy layer between the environment and the agent's reasoning process, ensuring that what an agent can reach is not automatically what it is allowed to know.
 
-In each case, the agent is behaving as designed. The failure is the absence of a governance layer between the environment and the model's reasoning state.
+Operational risk does not begin when an agent takes an action. It begins when an agent acquires context.
 
-Context governance introduces that layer. It is not a complement to action governance — it is a separate and equally necessary primitive. An enterprise that governs only the action surface has closed half the attack surface.
+---
 
-## The Four Governance Dimensions
+## Why Governing Actions Alone Isn't Enough
 
-Context governance operates across four dimensions of an agent's relationship with information:
+Most governance thinking stops at actions: what tools can this agent call, what APIs can it reach, what commands can it run. That's necessary — but it's half the picture.
 
-**Acquisition** — what an agent is permitted to read, receive, or observe from capability surfaces including the shell, filesystem, browser, MCP tool responses, screenshots, and external APIs. Acquisition governance is enforced at the surface layer, before content enters the agent's context window.
+An agent that is perfectly constrained in its actions can still cause serious harm through what it *reads*. A developer agent asked to fix a bug will read the relevant source files — and likely also read `.env` files, cloud credentials, internal configuration, and anything else it encounters along the way. It isn't doing anything wrong. It was never told it couldn't.
 
-**Retention** — how long acquired context may remain in the agent's active reasoning state and session context model. Sensitive information that was legitimately acquired for one subtask should not persist across the entire session or be available to future reasoning steps that do not require it.
+The harm doesn't begin when the agent acts on that information. It begins the moment the information enters the agent's reasoning state — because from that point, it can influence decisions, appear in outputs, get passed to other systems, or be retained across the session in ways that were never intended.
 
-**Reasoning** — what the model is permitted to reason over at inference time. The Context Firewall evaluates assembled context payloads against the agent's active behavior profile before submission to the model, blocking or redacting content the agent is not authorized to operationalize.
+Action governance defines what agents are allowed to **do**. Context governance defines what agents are allowed to **acquire and know**. Both are necessary for operational safety.
 
-**Operationalization** — what acquired context the agent may act on — include in outbound communications, pass to downstream tool calls, write to storage, or transmit to external systems. Context that an agent can see is not necessarily context it is permitted to use.
+---
 
-## The Three-Layer Architecture
+## What Happens Without It
 
-Context governance is implemented as a three-layer defense across all capability surfaces:
+**Sensitive information enters reasoning undetected.** Without a context governance layer, there is no control over what an agent is allowed to acquire, retain, reason over, or use. Credentials, personal data, internal configuration, and secrets can enter the agent's reasoning state during normal operation, with no record of what was acquired and no mechanism to prevent that information from influencing future actions.
 
-**Layer 1 — Capability Surface Interception.** CaSH governs shell, filesystem, and execution-layer context acquisition. CABR governs browser-derived context including DOM state, cookies, localStorage, and authenticated session data. MCP interceptors govern tool response payloads. Each surface has its own interception and classification layer.
+**Information persists longer than it should.** An agent that reads something sensitive early in a session may carry that information through every subsequent step — even steps that have nothing to do with it. Without retention controls, sensitive context doesn't expire.
 
-**Layer 2 — Context Accumulation.** The Context Accumulator maintains a stateful session context model tracking what the agent has acquired, from which surfaces, under which policies, classified under which sensitivity labels, and subject to what retention constraints. It is the authoritative record of the agent's cognitive state at any point in its session.
+**You can't audit what you can't see.** If an agent reads a secret and later includes it in an outbound call or a generated document, there is no trail connecting the acquisition to the outcome. When something goes wrong, you have symptoms — not causes.
 
-**Layer 3 — Context Firewall.** The final pre-inference and pre-transmission enforcement point. Evaluates assembled context against the agent's active behavior profile before the model sees it, and operates as a gateway before outbound calls to remote model APIs.
+---
 
-:::info Details Coming Soon
-Full concept documentation for context governance — including the session context model, sensitivity classification taxonomy, retention policy design, and the relationship between context governance and behavior profiles — will be published alongside the open-source reference implementation.
-:::
+## What We're Building
+
+At Raksha AI, we believe context governance is becoming a new category-defining layer for autonomous systems — and we are building CaFS, CaSH, CABR, and the Context Firewall as the first architecture primitives in that layer.
+
+---
+
+## Where to Go Next
+
+- [Operational Safety](/docs/concepts/operational-safety) — the broader discipline context governance belongs to
+- [CaSH](/docs/architecture/cash) — context governance at the shell and filesystem layer
+- [CABR](/docs/architecture/cabr) — context governance for browser agents
+- [CaFS](/docs/architecture/cafs) — context governance for filesystem access
+- [Context Firewall](/docs/architecture/context-firewall) — the final enforcement point before the model reasons

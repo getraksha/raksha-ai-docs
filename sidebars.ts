@@ -29,7 +29,6 @@ const sidebars: SidebarsConfig = {
         'concepts/operational-safety',
         'concepts/context-governance',
         'concepts/behavior-profiles',
-        'concepts/cognitive-visibility',
         'concepts/glossary',
       ],
     },

@@ -13,6 +13,7 @@ description: "Definitions of key terms used across Raksha AI architecture and do
 | **Behavior Profile** | An approved operating envelope binding an agent identity to allowed tools, data scopes, autonomy level, and runtime context constraints. |
 | **CABR** | Context-Aware Browser Runtime. The governance layer for browser agent context acquisition. |
 | **Capability Surface** | Any interface through which an agent can acquire context or take action — shell, browser, MCP, screenshot, API client. |
+| **CaFS** | Context-Aware File System. A FUSE-based interposition layer that governs what agents can acquire from the filesystem — intercepting file access, classifying sensitivity, and enforcing policy before content enters the agent's reasoning state. |
 | **CaSH** | Context-Aware Shell. The shell-layer interceptor for agent command invocations. |
 | **Context Accumulator** | Layer 2 of the context governance stack. Tracks all context acquired by an agent across capability surfaces within a session. |
 | **Context Firewall** | Layer 3 of the context governance stack. A policy gate between the Context Accumulator and the LLM context window. |
