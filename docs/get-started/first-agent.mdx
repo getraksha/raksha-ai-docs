@@ -1,0 +1,147 @@
+---
+title: Your first governed agent
+description: Use agp setup to register an agent, connect it to an MCP client, and understand why it starts out fail-closed.
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Your first governed agent
+
+`agp setup` is the first-mile wizard. In one command it registers an agent, creates its behavior profile, saves its credentials, verifies the connection, and (optionally) wires it into your MCP client.
+
+## Run setup
+
+```sh
+agp setup
+```
+
+Run it interactively and it prompts for an agent id and a client. Or pass them as flags:
+
+```sh
+agp setup --agent-id my-agent --client claude-desktop
+```
+
+```text
+AGP Setup
+─────────────────────────────────────────────
+Services ready                 ✓
+Registered agent               ✓  my-agent (active)
+Created behavior profile       ✓  my-agent.local.default (active, 0 tools — fail-closed)
+Approval meta-tools            ✓  4 tools granted (agp-approval-ops)
+Saved credentials              ✓  ~/.config/agp/config.yaml (profiles.local.agent_credentials)
+Bridge verification            ✓  token issued, 4 tools visible
+
+─────────────────────────────────────────────
+⚠  my-agent currently sees 0 tools — AGP is fail-closed by design.
+Grant tools:
+  console:  http://localhost:27868  →  Behavior Profiles → my-agent.local.default
+  or CLI:   agp behavior-profile grant-tools --behavior-profile-id my-agent.local.default --tools <name,...> --reason <why>
+Then restart the client so it re-discovers tools.
+```
+
+### What setup just created
+
+- **An agent** in Identity, with its own client credentials (no shared tokens).
+- **A behavior profile** named `<agent>.local.default` — **active but fail-closed**: zero business tools.
+- **The approval meta-tools** granted (`agp-approval-ops`), so the agent can list, inspect, proceed with, and cancel its *own* held approvals. That's why it already "sees 4 tools."
+- **Stored credentials** under `profiles.local.agent_credentials.<agent-id>` in your CLI config — the bridge uses these to authenticate.
+
+## Connect a client
+
+`agp setup --client <name>` wires the agent into your MCP client. You can also do it separately, any time, for an existing agent:
+
+```sh
+agp connect <client> --agent-id my-agent --write
+```
+
+`--write` applies the client config (keeping a `.bak`). Omit it to print the snippet and apply it yourself.
+
+<Tabs groupId="client">
+<TabItem value="claude-desktop" label="Claude Desktop" default>
+
+```sh
+agp connect claude-desktop --agent-id my-agent --write
+```
+
+Merges an `agp` MCP server into `claude_desktop_config.json`. Restart Claude Desktop to pick it up.
+
+</TabItem>
+<TabItem value="claude-code" label="Claude Code">
+
+```sh
+agp connect claude-code --agent-id my-agent
+```
+
+Runs `claude mcp add` to register the AGP bridge with Claude Code.
+
+</TabItem>
+<TabItem value="cursor" label="Cursor">
+
+```sh
+agp connect cursor --agent-id my-agent --write
+```
+
+Writes the `agp` server into `~/.cursor/mcp.json`.
+
+</TabItem>
+<TabItem value="vscode" label="VS Code">
+
+```sh
+agp connect vscode --agent-id my-agent --write
+```
+
+Writes a project-scoped `.vscode/mcp.json`.
+
+</TabItem>
+<TabItem value="codex" label="Codex">
+
+```sh
+agp connect codex --agent-id my-agent --write
+```
+
+Writes the `mcp_servers` section into `~/.codex/config.toml`.
+
+</TabItem>
+<TabItem value="custom" label="Custom / other">
+
+```sh
+agp connect custom --agent-id my-agent
+```
+
+Prints the command, env vars, and JSON snippet so you can wire any MCP client to the AGP bridge yourself.
+
+</TabItem>
+</Tabs>
+
+Under the hood, the client launches `agp bridge run` — a local stdio MCP server that authenticates with the agent's stored credentials and proxies every tool call through AGP. You can sanity-check it yourself:
+
+```sh
+agp bridge check --agent-id my-agent
+```
+
+## The fail-closed moment
+
+Restart your client and ask the agent what tools it has. It will see only the approval meta-tools — **none of your real tools yet**. This is the point of AGP:
+
+> An agent can only see and call tools explicitly granted in its behavior profile. It cannot reason about, plan with, or invoke a capability it cannot see.
+
+Nothing is broken. The agent is governed and empty by design. To make it useful, you grant it tools — which first means putting some tools in the catalog.
+
+## Next: give the agent something to do
+
+1. **[Govern your first MCP server](../core-workflows/govern-mcp-server)** — register an MCP server in the catalog so its tools become grantable.
+2. **Grant tools to the behavior profile** — once tools exist:
+
+   ```sh
+   agp behavior-profile grant-tools \
+     --behavior-profile-id my-agent.local.default \
+     --tools car-db-ops__list-reservations,car-db-ops__read-reservation \
+     --reason "read-only access for demo"
+   ```
+
+   ...or do the same in the console under **Behavior Profiles → my-agent.local.default**.
+
+3. Watch the calls appear in the console's **Activity** feed — allowed, held, or denied.
+
+To understand *why* destructive calls hold for approval and how that flow works, continue to [The approval workflow](../core-workflows/approval-workflow) and [Behavior profiles](../core-workflows/behavior-profiles).

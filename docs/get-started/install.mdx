@@ -1,0 +1,142 @@
+---
+title: Install & first run
+description: Install the agp CLI, initialize ~/.agp, download the service binaries, and start the governed stack.
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Install &amp; first run
+
+This page takes you from nothing to a running, health-checked AGP stack. Four steps: install the CLI, `init`, `fetch`, `start`.
+
+## 1. Install the `agp` CLI
+
+The CLI is a single binary. The installer downloads it for your platform, verifies its SHA-256 checksum against the release, and adds it to your `PATH`.
+
+<Tabs groupId="os">
+<TabItem value="macos-linux" label="macOS & Linux" default>
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/getraksha/agp/main/install.sh | sh
+```
+
+</TabItem>
+<TabItem value="windows" label="Windows">
+
+`install.sh` needs a POSIX shell, so on Windows use **PowerShell**:
+
+```powershell
+irm https://raw.githubusercontent.com/getraksha/agp/main/install.ps1 | iex
+```
+
+Prefer to install by hand? Download `agp_<version>_windows-<arch>.tar.gz` from the [releases page](https://github.com/getraksha/agp/releases/latest), extract `agp.exe` with `tar -xf`, and add its folder to your `PATH`.
+
+</TabItem>
+</Tabs>
+
+A piped installer runs in a subshell and cannot change your *current* shell's `PATH`. If the installer prints an "activate" line, run it (or open a new terminal) so `agp` is found:
+
+```sh
+export PATH="/usr/local/bin:$PATH"   # exact line is printed by the installer
+```
+
+Confirm it's installed:
+
+```sh
+agp version
+```
+
+## 2. `agp init` — create your AGP home
+
+`agp init` creates `~/.agp` (directories, generated secrets, one `.env` per service) and your CLI config with a `local` profile. It is safe to re-run: existing secrets, env files, and config are kept.
+
+```sh
+agp init
+```
+
+```text
+AGP home ready at /Users/you/.agp
+  env files written: identity, registry, behavior-profile, policy, audit, approval, approval-ops, proxy, admin-ui
+  CLI config:        /Users/you/.config/agp/config.yaml (profile: local)
+
+  Console login (http://localhost:27868): user "admin" password "ZMYtMU_3XIZ9G0qfTM9InjJQuBguA7_…"
+  This password is shown once; it is stored in /Users/you/.agp/secrets/console-password
+
+Next: agp fetch (or agp fetch --local <agp-core path> to build from source), then agp start
+```
+
+:::warning Save the console password
+The console password is printed **once**. It is also stored at `~/.agp/secrets/console-password`, so you can always recover it with `cat ~/.agp/secrets/console-password`.
+:::
+
+## 3. `agp fetch all` — download the services
+
+This installs the eight AGP service binaries into `~/.agp/bin` for your platform.
+
+```sh
+agp fetch all
+```
+
+:::note Building from source
+If you have an `agp-core` checkout, `agp fetch --local <path-to-agp-core>` builds the services from source instead of downloading them.
+:::
+
+## 4. `agp start all` — start the stack
+
+Services start in dependency order (Identity first; proxy and console last) and each is waited on until its `/health/ready` returns OK.
+
+```sh
+agp start all
+```
+
+```text
+starting identity          ✓  127.0.0.1:27860  (pid 52948, ready in 1006ms)
+starting registry          ✓  127.0.0.1:27861  (pid 52949, ready in 506ms)
+starting behavior-profile  ✓  127.0.0.1:27862  (pid 52950, ready in 505ms)
+starting policy            ✓  127.0.0.1:27863  (pid 52951, ready in 506ms)
+starting audit             ✓  127.0.0.1:27864  (pid 52952, ready in 505ms)
+starting approval          ✓  127.0.0.1:27865  (pid 52953, ready in 505ms)
+starting approval-ops      ✓  127.0.0.1:27866  (pid 52954, ready in 505ms)
+starting proxy             ✓  127.0.0.1:27867  (pid 52955, ready in 505ms)
+starting admin-ui          ✓  127.0.0.1:27868  (pid 52956, ready in 517ms)
+```
+
+Confirm everything is up:
+
+```sh
+agp status
+```
+
+```text
+service           state    pid    addr             health  version
+----------------  -------  -----  ---------------  ------  -------
+identity          running  52948  127.0.0.1:27860  ready   v0.0.12
+registry          running  52949  127.0.0.1:27861  ready   v0.0.12
+behavior-profile  running  52950  127.0.0.1:27862  ready   v0.0.12
+policy            running  52951  127.0.0.1:27863  ready   v0.0.12
+audit             running  52952  127.0.0.1:27864  ready   v0.0.12
+approval          running  52953  127.0.0.1:27865  ready   v0.0.12
+approval-ops      running  52954  127.0.0.1:27866  ready   v0.0.12
+proxy             running  52955  127.0.0.1:27867  ready   v0.0.12
+admin-ui          running  52956  127.0.0.1:27868  ready   v0.0.12
+```
+
+:::tip A service won't go ready?
+Check its log: `agp logs <service> --lines 100` (for example `agp logs policy`), or `agp logs -f` to follow all services live. `agp status` reports which dependency check is failing.
+:::
+
+### Port already in use?
+
+AGP defaults to the quiet `27860–27868` range precisely so this is rare. If something on your machine already holds one of those ports, you can move it:
+
+1. Edit the address in `~/.agp/services/<service>.env` (for example `HTTP_LISTEN_ADDR=127.0.0.1:37863`).
+2. Restart that service: `agp restart <service>`.
+
+If you'd rather start clean, `agp init --force` re-renders every service `.env` from the defaults (keeping a `.bak` of each; your secrets are never regenerated).
+
+## What you have now
+
+The full plane is running on your machine and the console is live at **http://localhost:27868**. Next, log in.
+
+[Log in to the console →](console)
